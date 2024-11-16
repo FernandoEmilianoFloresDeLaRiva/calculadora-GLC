@@ -1,43 +1,48 @@
 from flask import Flask, render_template, request, jsonify
-import re
+from lark import Lark, Transformer
 
 app = Flask(__name__)
 
-def evaluate_expression(expr):
-    def parse_expr(tokens):
-        value = parse_term(tokens)
-        while tokens and tokens[0] in ('+', '-'):
-            op = tokens.pop(0)
-            if op == '+':
-                value += parse_term(tokens)
-            elif op == '-':
-                value -= parse_term(tokens)
-        return value
+# Gramática libre de contexto
+grammar = """
+?start: expr
+?expr: term
+     | expr "+" term   -> add
+     | expr "-" term   -> sub
+?term: factor
+     | term "*" factor -> mul
+     | term "/" factor -> div
+?factor: NUMBER        -> number
+       | "(" expr ")"  -> parens
+NUMBER: /\d+(\.\d+)?/
+%ignore " "            // Ignorar espacios en blanco
+"""
 
-    def parse_term(tokens):
-        value = parse_factor(tokens)
-        while tokens and tokens[0] in ('*', '/'):
-            op = tokens.pop(0)
-            if op == '*':
-                value *= parse_factor(tokens)
-            elif op == '/':
-                value /= parse_factor(tokens)
-        return value
+# Analizador de Lark
+parser = Lark(grammar, start='start', parser='lalr')
 
-    def parse_factor(tokens):
-        if tokens[0] == '(':
-            tokens.pop(0)  # Remove '('
-            value = parse_expr(tokens)
-            tokens.pop(0)  # Remove ')'
-            return value
-        else:
-            return float(tokens.pop(0))  # Convert number to float
+# Transformer para evaluar las expresiones
+class EvalTransformer(Transformer):
+    def add(self, args):
+        return args[0] + args[1]
 
-    # Tokenizer: Split expression into tokens
-    tokens = re.findall(r'\d+\.\d+|\d+|[+\-*/()]', expr)
-    return parse_expr(tokens)
+    def sub(self, args):
+        return args[0] - args[1]
 
-# Rutas de Flask
+    def mul(self, args):
+        return args[0] * args[1]
+
+    def div(self, args):
+        if args[1] == 0:
+            raise ValueError("División por cero")
+        return args[0] / args[1]
+
+    def number(self, args):
+        return float(args[0])
+
+    def parens(self, args):
+        return args[0]
+
 @app.route('/')
 def index():
     return render_template('index.html')
@@ -46,7 +51,8 @@ def index():
 def calculate():
     try:
         expression = request.form['expression']
-        result = evaluate_expression(expression)
+        tree = parser.parse(expression)
+        result = EvalTransformer().transform(tree)
         return jsonify({'result': result})
     except Exception as e:
         return jsonify({'error': str(e)}), 400
