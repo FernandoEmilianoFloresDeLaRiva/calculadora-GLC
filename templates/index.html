@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Calculadora</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+        margin: 0;
+        background-color: #f4f4f9;
+      }
+      .calculator {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        gap: 10px;
+        width: 20%;
+        background-color: #fff;
+        padding: 20px;
+        border-radius: 10px;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+      }
+      .display {
+        width: 70%;
+        height: 40px;
+        padding: 10px;
+        font-size: 20px;
+        text-align: right;
+        border: 1px solid #ccc;
+        border-radius: 5px;
+        background-color: #fafafa;
+      }
+      .buttons {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 10px;
+      }
+
+      .calcular {
+        width: 78%;
+        padding: 15px;
+        background-color: #4caf50;
+        color: white;
+        border-radius: 5px;
+        font-size: 20px;
+      }
+      button {
+        padding: 20px;
+        font-size: 18px;
+        background-color: #e6e6e6;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        transition: background-color 0.2s;
+      }
+      button:hover {
+        background-color: #d4d4d4;
+      }
+      button:active {
+        background-color: #c0c0c0;
+      }
+      .result {
+        margin-top: 20px;
+        font-size: 22px;
+        font-weight: bold;
+        color: green;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="calculator">
+      <input
+        type="text"
+        id="display"
+        class="display"
+        disabled
+        placeholder="0"
+      />
+      <div class="buttons">
+        <button onclick="appendToDisplay('7')">7</button>
+        <button onclick="appendToDisplay('8')">8</button>
+        <button onclick="appendToDisplay('9')">9</button>
+        <button onclick="appendToDisplay('/')">/</button>
+        <button onclick="appendToDisplay('4')">4</button>
+        <button onclick="appendToDisplay('5')">5</button>
+        <button onclick="appendToDisplay('6')">6</button>
+        <button onclick="appendToDisplay('*')">*</button>
+        <button onclick="appendToDisplay('1')">1</button>
+        <button onclick="appendToDisplay('2')">2</button>
+        <button onclick="appendToDisplay('3')">3</button>
+        <button onclick="appendToDisplay('-')">-</button>
+        <button onclick="appendToDisplay('0')">0</button>
+        <button onclick="appendToDisplay('.')">.</button>
+        <button onclick="clearDisplay()">C</button>
+        <button onclick="appendToDisplay('+')">+</button>
+      </div>
+      <button onclick="calculate()" class="calcular">Calcular</button>
+      <div id="result" class="result"></div>
+    </div>
+
+    <script>
+      const resultDiv = document.getElementById("result");
+
+      function appendToDisplay(value) {
+        const display = document.getElementById("display");
+        if (display.value === "0") {
+          display.value = value;
+        } else {
+          display.value += value;
+        }
+      }
+
+      function clearDisplay() {
+        document.getElementById("display").value = "0";
+        resultDiv.textContent = "";
+      }
+
+      async function calculate() {
+        const expression = document.getElementById("display").value;
+        const response = await fetch("/calculate", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/x-www-form-urlencoded",
+          },
+          body: `expression=${encodeURIComponent(expression)}`,
+        });
+        const data = await response.json();
+        if (response.ok) {
+          resultDiv.textContent = `Resultado: ${data.result}`;
+        } else {
+          resultDiv.textContent = `Error: ${data.error}`;
+        }
+      }
+    </script>
+  </body>
+</html>
