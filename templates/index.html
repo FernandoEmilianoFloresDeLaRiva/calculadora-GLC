@@ -82,7 +82,7 @@
 
       #tree-container {
         height: 70%;
-        width: 70%;
+        width: 50%;
         overflow: auto;
         border: 1px solid #ccc;
         margin-top: 20px;
@@ -139,6 +139,7 @@
       function clearDisplay() {
         document.getElementById("display").value = "0";
         resultDiv.textContent = "";
+        d3.select("#tree-container").select("svg").remove();
       }
 
       async function calculate() {

@@ -44,11 +44,19 @@ class EvalTransformer(Transformer):
         return args[0]
 
 def tree_to_json(tree):
+    rename_map = {
+        "add": "+",
+        "sub": "-",
+        "mul": "*",
+        "div": "/",
+        "number": "n"
+    }
     if isinstance(tree, Token):
         return {"name": tree.value}  # Token como hoja
     elif isinstance(tree, Tree):
+        node_name = rename_map.get(tree.data, tree.data)
         return {
-            "name": tree.data,  # Nodo
+            "name": node_name,
             "children": [tree_to_json(child) for child in tree.children]
         }
     
