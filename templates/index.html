@@ -4,11 +4,12 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Calculadora</title>
+    <script src="https://d3js.org/d3.v7.min.js"></script>
     <style>
       body {
         font-family: Arial, sans-serif;
         display: flex;
-        justify-content: center;
+        justify-content: space-evenly;
         align-items: center;
         height: 100vh;
         margin: 0;
@@ -41,15 +42,6 @@
         grid-template-columns: repeat(4, 1fr);
         gap: 10px;
       }
-
-      .calcular {
-        width: 78%;
-        padding: 15px;
-        background-color: #4caf50;
-        color: white;
-        border-radius: 5px;
-        font-size: 20px;
-      }
       button {
         padding: 20px;
         font-size: 18px;
@@ -65,11 +57,38 @@
       button:active {
         background-color: #c0c0c0;
       }
+      .calcular {
+        width: 78%;
+        padding: 15px;
+        background-color: #4caf50;
+        color: white;
+        border-radius: 5px;
+        font-size: 20px;
+      }
       .result {
         margin-top: 20px;
         font-size: 22px;
         font-weight: bold;
         color: green;
+      }
+      .tree {
+        margin-top: 20px;
+        font-size: 16px;
+        color: #333;
+      }
+      .token {
+        color: #ff6347;
+      }
+
+      #tree-container {
+        height: 70%;
+        width: 70%;
+        overflow: auto;
+        border: 1px solid #ccc;
+        margin-top: 20px;
+        background-color: #fff;
+        border-radius: 10px;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
       }
     </style>
   </head>
@@ -103,6 +122,7 @@
       <button onclick="calculate()" class="calcular">Calcular</button>
       <div id="result" class="result"></div>
     </div>
+    <div id="tree-container"></div>
 
     <script>
       const resultDiv = document.getElementById("result");
@@ -133,9 +153,65 @@
         const data = await response.json();
         if (response.ok) {
           resultDiv.textContent = `Resultado: ${data.result}`;
+          drawTree(data.tree_json);
         } else {
           resultDiv.textContent = `Error: ${data.error}`;
         }
+      }
+
+      function drawTree(treeData) {
+        console.log(treeData);
+        
+        d3.select("#tree-container").select("svg").remove();
+
+        const width = 600;
+        const height = 400;
+        const svg = d3
+          .select("#tree-container")
+          .append("svg")
+          .attr("width", width)
+          .attr("height", height);
+
+        const g = svg.append("g").attr("transform", "translate(50, 50)");
+
+        // Crea un árbol jerárquico a partir de los datos
+        const root = d3.hierarchy(treeData);
+
+        // Crea layout
+        const treeLayout = d3.tree().size([width - 100, height - 100]);
+        treeLayout(root);
+
+        // Dibuja conexiones entre nodos
+        g.selectAll(".link")
+          .data(root.links())
+          .enter()
+          .append("line")
+          .attr("class", "link")
+          .attr("x1", (d) => d.source.x)
+          .attr("y1", (d) => d.source.y)
+          .attr("x2", (d) => d.target.x)
+          .attr("y2", (d) => d.target.y)
+          .attr("stroke", "#ccc")
+          .attr("stroke-width", 2);
+
+        // Dibuja nodos
+        const nodes = g
+          .selectAll(".node")
+          .data(root.descendants())
+          .enter()
+          .append("g")
+          .attr("class", "node")
+          .attr("transform", (d) => `translate(${d.x},${d.y})`);
+
+        nodes.append("circle").attr("r", 20).attr("fill", "#4CAF50");
+
+        nodes
+          .append("text")
+          .attr("dy", 5)
+          .attr("x", 0)
+          .attr("text-anchor", "middle")
+          .attr("fill", "#fff")
+          .text((d) => d.data.name);
       }
     </script>
   </body>

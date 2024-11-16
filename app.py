@@ -1,5 +1,5 @@
 from flask import Flask, render_template, request, jsonify
-from lark import Lark, Transformer
+from lark import Lark, Transformer, Tree, Token
 
 app = Flask(__name__)
 
@@ -43,6 +43,15 @@ class EvalTransformer(Transformer):
     def parens(self, args):
         return args[0]
 
+def tree_to_json(tree):
+    if isinstance(tree, Token):
+        return {"name": tree.value}  # Token como hoja
+    elif isinstance(tree, Tree):
+        return {
+            "name": tree.data,  # Nodo
+            "children": [tree_to_json(child) for child in tree.children]
+        }
+    
 @app.route('/')
 def index():
     return render_template('index.html')
@@ -53,7 +62,8 @@ def calculate():
         expression = request.form['expression']
         tree = parser.parse(expression)
         result = EvalTransformer().transform(tree)
-        return jsonify({'result': result})
+        tree_json = tree_to_json(tree)
+        return jsonify({'result': result, 'tree_json': tree_json})
     except Exception as e:
         return jsonify({'error': str(e)}), 400
 
