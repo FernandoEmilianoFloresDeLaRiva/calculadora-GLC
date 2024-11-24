@@ -162,7 +162,9 @@
         <button onclick="clearDisplay()">C</button>
         <button onclick="appendToDisplay('+')">+</button>
         <button onclick="deleteLastCharacter()">DEL</button>
-        <button onclick="appendToDisplay('+')">AC</button>
+        <button onclick="resetAndSaveResult()" style="display: none" id="ac">
+          AC
+        </button>
       </div>
       <button onclick="calculate()" class="calcular">Calcular</button>
       <div id="result" class="result"></div>
@@ -186,6 +188,7 @@
       const totalNumbers = document.getElementById("total-numbers");
       const totalOperators = document.getElementById("total-operators");
       const treeContainer = document.getElementById("tree-container");
+      let savedResult = 0;
 
       function appendToDisplay(value) {
         const display = document.getElementById("display");
@@ -198,6 +201,7 @@
 
       function clearDisplay() {
         document.getElementById("display").value = "0";
+        savedResult = 0;
         treeContainer.style.display = "none";
         tbl.style.display = "none";
         tblBody.innerHTML = "";
@@ -206,6 +210,7 @@
         totalNumbers.innerHTML = "";
         totalOperators.style.display = "none";
         totalOperators.innerHTML = "";
+        document.getElementById("ac").style.display = "none";
         d3.select("#tree-container").select("svg").remove();
       }
 
@@ -220,7 +225,9 @@
         });
         const data = await response.json();
         if (response.ok) {
+          document.getElementById("ac").style.display = "block";
           resultDiv.textContent = `Resultado: ${data.result}`;
+          savedResult = data.result;
           totalNumbers.style.display = "flex";
           totalOperators.style.display = "flex";
           drawTree(data.tree_json);
@@ -326,6 +333,24 @@
         }
         const newValue = value.slice(0, -1);
         expression.value = newValue;
+      }
+
+      function resetAndSaveResult() {
+        const display = document.getElementById("display");
+
+        display.value = `${savedResult}`;
+
+        // Limpia el resultado mostrado y oculta el botón AC
+        resultDiv.textContent = "";
+        document.getElementById("ac").style.display = "none";
+        tbl.style.display = "none";
+        tblBody.innerHTML = "";
+        resultDiv.textContent = "";
+        totalNumbers.style.display = "none";
+        totalNumbers.innerHTML = "";
+        totalOperators.style.display = "none";
+        totalOperators.innerHTML = "";
+        treeContainer.style.display = "none";
       }
     </script>
   </body>
