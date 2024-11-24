@@ -11,6 +11,7 @@
         display: flex;
         justify-content: space-evenly;
         align-items: center;
+        flex-wrap: wrap;
         height: 100vh;
         margin: 0;
         background-color: #f4f4f9;
@@ -81,6 +82,7 @@
       }
 
       #tree-container {
+        display: none;
         height: 70%;
         width: 50%;
         overflow: auto;
@@ -89,6 +91,47 @@
         background-color: #fff;
         border-radius: 10px;
         box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+      }
+
+      .container-ply {
+        width: 40%;
+      }
+
+      table {
+        display: none;
+        width: 100%;
+        border: 1px solid #ccc;
+        background-color: #fff;
+        border-radius: 10px;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+      }
+
+      th,
+      td {
+        padding: 5px;
+        box-shadow: 0 0 8px rgba(0, 0, 0, 0.1);
+      }
+
+      tbody {
+        text-align: center;
+        width: 100%;
+        border: 1px solid #ccc;
+        background-color: #fff;
+        border-radius: 10px;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+      }
+
+      .totals-container {
+        display: none;
+        justify-content: center;
+        align-items: center;
+        flex-direction: column;
+        width: 20%;
+        border: 1px solid #ccc;
+        background-color: #fff;
+        border-radius: 10px;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        margin-bottom: 10px;
       }
     </style>
   </head>
@@ -123,9 +166,24 @@
       <div id="result" class="result"></div>
     </div>
     <div id="tree-container"></div>
-
+    <div class="container-ply">
+      <table>
+        <thead>
+          <th>Valor</th>
+          <th>Tipo</th>
+        </thead>
+        <tbody id="tblBody"></tbody>
+      </table>
+    </div>
+    <div id="total-operators" class="totals-container"></div>
+    <div id="total-numbers" class="totals-container"></div>
     <script>
       const resultDiv = document.getElementById("result");
+      const tblBody = document.getElementById("tblBody");
+      const tbl = document.getElementsByTagName("table")[0];
+      const totalNumbers = document.getElementById("total-numbers");
+      const totalOperators = document.getElementById("total-operators");
+      const treeContainer = document.getElementById("tree-container");
 
       function appendToDisplay(value) {
         const display = document.getElementById("display");
@@ -138,7 +196,14 @@
 
       function clearDisplay() {
         document.getElementById("display").value = "0";
+        treeContainer.style.display = "none";
+        tbl.style.display = "none";
+        tblBody.innerHTML = "";
         resultDiv.textContent = "";
+        totalNumbers.style.display = "none";
+        totalNumbers.innerHTML = "";
+        totalOperators.style.display = "none";
+        totalOperators.innerHTML = "";
         d3.select("#tree-container").select("svg").remove();
       }
 
@@ -154,7 +219,20 @@
         const data = await response.json();
         if (response.ok) {
           resultDiv.textContent = `Resultado: ${data.result}`;
+          totalNumbers.style.display = "flex";
+          totalOperators.style.display = "flex";
           drawTree(data.tree_json);
+          drawTable(data.tokens_list);
+          drawTotalOperation(
+            data.total_numbers,
+            totalNumbers,
+            "Numeros totales"
+          );
+          drawTotalOperation(
+            data.total_operators,
+            totalOperators,
+            "Operadores totales:"
+          );
         } else {
           resultDiv.textContent = `Error: ${data.error}`;
         }
@@ -162,7 +240,7 @@
 
       function drawTree(treeData) {
         console.log(treeData);
-        
+        treeContainer.style.display = "block";
         d3.select("#tree-container").select("svg").remove();
 
         const width = 600;
@@ -213,6 +291,25 @@
           .attr("text-anchor", "middle")
           .attr("fill", "#fff")
           .text((d) => d.data.name);
+      }
+
+      function drawTable(data) {
+        tbl.style.display = "table";
+        data.forEach((element, idx) => {
+          tblBody.innerHTML += `
+          <tr key=${idx}>
+            <td>${element.value}</td>
+            <td>${element.type}</td>
+          </tr>
+          `;
+        });
+      }
+
+      function drawTotalOperation(number, node, title) {
+        node.innerHTML += `
+        <span>${title}</span>
+        <span>${number}</span>
+        `;
       }
     </script>
   </body>

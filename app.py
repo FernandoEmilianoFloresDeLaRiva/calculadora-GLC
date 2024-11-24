@@ -1,5 +1,6 @@
 from flask import Flask, render_template, request, jsonify
 from lark import Lark, Transformer, Tree, Token
+import ply.lex as lex
 
 app = Flask(__name__)
 
@@ -43,6 +44,45 @@ class EvalTransformer(Transformer):
     def parens(self, args):
         return args[0]
 
+# Lexer con PLY
+tokens = ('NUMERO', 'SUMA', 'RESTA', 'MULTIPLICACION', 'DIVISION')
+
+t_SUMA = r'\+'
+t_RESTA = r'-'
+t_MULTIPLICACION = r'\*'
+t_DIVISION = r'/'
+
+def t_NUMERO(t):
+    r'\d+(\.\d+)?'
+    t.value = float(t.value) if '.' in t.value else int(t.value)
+    return t
+
+t_ignore = ' \t'
+
+def t_error(t):
+    raise SyntaxError(f"Illegal character '{t.value[0]}' at position {t.lexpos}")
+
+lexer = lex.lex()
+
+def analyze_tokens(expression):
+    lexer.input(expression)
+    total_numbers = 0
+    total_operators = 0
+    tokens_list = []
+
+    for token in lexer:
+        tokens_list.append({'type': token.type, 'value': token.value})
+        if token.type == 'NUMERO':
+            total_numbers += 1
+        elif token.type in ('SUMA', 'RESTA', 'MULTIPLICACION', 'DIVISION'):
+            total_operators += 1
+
+    return {
+        'total_numbers': total_numbers,
+        'total_operators': total_operators,
+        'tokens_list': tokens_list
+    }
+
 def tree_to_json(tree):
     rename_map = {
         "add": "+",
@@ -71,7 +111,14 @@ def calculate():
         tree = parser.parse(expression)
         result = EvalTransformer().transform(tree)
         tree_json = tree_to_json(tree)
-        return jsonify({'result': result, 'tree_json': tree_json})
+        token_analysis = analyze_tokens(expression)
+        return jsonify({
+            'result': result, 
+            'tree_json': tree_json, 
+            'total_numbers': token_analysis['total_numbers'],
+            'total_operators': token_analysis['total_operators'],
+            'tokens_list': token_analysis['tokens_list']
+        })
     except Exception as e:
         return jsonify({'error': str(e)}), 400
 
